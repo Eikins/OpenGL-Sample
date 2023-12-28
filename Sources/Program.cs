@@ -34,7 +34,13 @@ namespace GLSample
             var options = WindowOptions.Default;
             options.Size = new Vector2D<int>(kDefaultWidth, kDefaultHeight);
             options.Title = "OpenGL with Silk.NET";
-            options.API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Debug, new APIVersion(4, 6));
+
+            var flags = ContextFlags.ForwardCompatible;
+#if DEBUG
+            flags |= ContextFlags.Debug;
+#endif
+
+            options.API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, flags, new APIVersion(4, 6));
             options.PreferredDepthBufferBits = 24;
 
             s_Window = Window.Create(options);
@@ -65,19 +71,9 @@ namespace GLSample
 
             s_GL = s_Window.CreateOpenGL();
 
-            unsafe
-            {
-                DebugProc callback = (source, type, id, severity, length, message, userParam) =>
-                {
-                    var sourceStr = (DebugSource)source;
-                    var typeStr = (DebugType)type;
-                    var severityStr = (DebugSeverity)severity;
-                    var messageStr = Marshal.PtrToStringAnsi(message, length);
-                    Console.Write($"{source}:{type}[{severity}]({id}) {messageStr}");
-                };
-                s_GL.DebugMessageCallback(callback, null);
-                s_GL.DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
-            }
+#if DEBUG
+            SetupDebugCallback();
+#endif
 
             s_Camera = new Camera();
             s_Camera.AspectRatio = (float) kDefaultWidth / kDefaultHeight;
@@ -150,5 +146,21 @@ namespace GLSample
                 s_Window.Close();
             }
         }
+
+#if DEBUG
+        private static void SetupDebugCallback()
+        {
+            unsafe
+            {
+                DebugProc callback = (source, type, id, severity, length, message, userParam) =>
+                {
+                    var messageStr = Marshal.PtrToStringAnsi(message, length);
+                    Console.WriteLine($"{source}:{type}[{severity}]({id}) {messageStr}");
+                };
+                s_GL.DebugMessageCallback(callback, null);
+                s_GL.DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
+            }
+        }
+#endif
     }
 }
