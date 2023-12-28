@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>GLSample</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silk.NET" Version="2.20.0" />
+    <PackageReference Include="Silk.NET.Assimp" Version="2.20.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\**\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="assets\shaders\library\Core.glsl" />
+    <None Remove="Assets\Shaders\Library\SpaceTransforms.glsl" />
+  </ItemGroup>
+  
+</Project>
