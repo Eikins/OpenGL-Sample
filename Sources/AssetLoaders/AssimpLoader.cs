@@ -1,6 +1,7 @@
 ﻿using GLSample.Rendering;
 using Silk.NET.Assimp;
 using Silk.NET.OpenGL;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace GLSample.AssetLoaders

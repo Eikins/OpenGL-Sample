@@ -16,6 +16,7 @@ namespace GLSample.Sources.Rendering
         public struct Constants
         {
             [FieldOffset(0)] public Matrix4x4 viewProjectionMatrix;
+            [FieldOffset(64)] public Vector3 lightDirection;
 
             public static nuint kByteSize = (nuint) Marshal.SizeOf<Constants>();
         }
