@@ -40,6 +40,8 @@ namespace GLSample
         private GLPerFrameUniformBuffer _perFrameUniformBuffer;
         private Vector3 _sphereColor = Vector3.One;
 
+        private TestRenderPass _testRenderPass;
+
         public void Start()
         {
             var options = WindowOptions.Default;
@@ -87,6 +89,9 @@ namespace GLSample
 #endif
 
             CreateScene();
+
+            _testRenderPass = new TestRenderPass(_gl);
+            _testRenderPass.Initialize();
         }
 
         private void CreateScene()
@@ -124,6 +129,9 @@ namespace GLSample
             {
                 SetupPerFrameConstants();
 
+                _gl.Viewport(0, 0, kDefaultWidth, kDefaultHeight);
+                _gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+                _gl.ClearColor(0, 0, 0, 0);
                 _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
                 // Setup Depth State
@@ -142,6 +150,8 @@ namespace GLSample
                 }
 
                 _imGuiController.Render();
+
+                _testRenderPass.ExecutePass();
             }
         }
 
@@ -184,6 +194,9 @@ namespace GLSample
             {
                 DebugProc callback = (source, type, id, severity, length, message, userParam) =>
                 {
+                    if ((int) severity == (int) DebugSeverity.DebugSeverityNotification)
+                        return;
+
                     var messageStr = Marshal.PtrToStringAnsi(message, length);
                     Console.WriteLine($"{source}:{type}[{severity}]({id}) {messageStr}");
                 };

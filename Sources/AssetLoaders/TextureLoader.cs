@@ -14,17 +14,17 @@ namespace GLSample.AssetLoaders
             Image<Rgba32> image = (Image<Rgba32>) Image.Load(path);
             image.Mutate(ctx => ctx.Flip(FlipMode.Vertical));
 
-            var pixels = new Rgba32[image.Size.Width * image.Size.Height];
+            var pixels = new Rgba32[image.Width * image.Height];
             image.CopyPixelDataTo(pixels);
 
             uint mipCount = 1;
             if (useMips)
             {
                 // Compute the maximum number of mipmaps.
-                mipCount = (uint) MathF.Floor(MathF.Log2(Math.Max(image.Size.Width, image.Size.Height))) + 1;
+                mipCount = (uint) MathF.Floor(MathF.Log2(Math.Max(image.Width, image.Height))) + 1;
             }
 
-            var textureDescriptor = new GLTextureDescriptor((uint)image.Size.Width, (uint)image.Size.Height, SizedInternalFormat.Rgba8, mipCount);
+            var textureDescriptor = new GLTextureDescriptor((uint)image.Width, (uint)image.Height, SizedInternalFormat.Rgba8, mipCount);
             var texture = new GLTexture(gl, textureDescriptor);
             texture.SetFilterMode(FilterMode.Linear);
             texture.SetWrapMode(WrapMode.Clamp);
