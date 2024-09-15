@@ -62,7 +62,6 @@ namespace GLSample.Rendering
 
             _shader.Use();
             _mesh.Draw();
-
         }
     }
 }

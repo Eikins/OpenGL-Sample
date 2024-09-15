@@ -1,4 +1,4 @@
-#version 460 core // Using GLSL version 4.6.
+#version 460 core
 
 #include "Assets/Shaders/Library/Core.glsl"
 #include "Assets/Shaders/Library/SpaceTransforms.glsl"
