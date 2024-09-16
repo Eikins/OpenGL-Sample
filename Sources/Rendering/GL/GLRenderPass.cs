@@ -13,7 +13,6 @@ namespace GLSample.Rendering
     public struct DepthAttachment
     {
         public GLTexture target;
-        public bool clearBeforePass;
     }
 
     public abstract class GLRenderPass
@@ -22,7 +21,7 @@ namespace GLSample.Rendering
         protected DepthAttachment? depthAttachment;
         protected GL gl;
 
-        private uint _framebufferHandle;
+        public uint FramebufferHandle { get; private set; }
 
         public GLRenderPass(GL gl) { this.gl = gl; }
 
@@ -32,7 +31,7 @@ namespace GLSample.Rendering
         public void ExecutePass()
         {
             // bind the fbo and draw.
-            gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _framebufferHandle);
+            gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FramebufferHandle);
             Render();
         }
 
@@ -41,7 +40,7 @@ namespace GLSample.Rendering
             ConfigureTargets();
 
             // Create corresponding framebuffer object
-            _framebufferHandle = gl.CreateFramebuffer();
+            FramebufferHandle = gl.CreateFramebuffer();
             var activeColorBuffers = new GLEnum[colorAttachments.Count];
             
             // Attach the textures
@@ -53,17 +52,17 @@ namespace GLSample.Rendering
                 var attachment = colorAttachments[i];
                 if (attachment.target != null)
                 {
-                    gl.NamedFramebufferTexture(_framebufferHandle, slot, attachment.target.Handle, attachment.mipLevel);
+                    gl.NamedFramebufferTexture(FramebufferHandle, slot, attachment.target.Handle, attachment.mipLevel);
                 }
             }
 
             // Declare the draw buffers. In this case, we take the color attachment order.
-            gl.NamedFramebufferDrawBuffers(_framebufferHandle, activeColorBuffers);
+            gl.NamedFramebufferDrawBuffers(FramebufferHandle, activeColorBuffers);
 
             if (depthAttachment != null)
             {
                 gl.NamedFramebufferTexture(
-                    _framebufferHandle,
+                    FramebufferHandle,
                     FramebufferAttachment.DepthAttachment,
                     depthAttachment.Value.target.Handle,
                     0
@@ -71,7 +70,7 @@ namespace GLSample.Rendering
             }
 
             // Check the framebuffer status.
-            GLEnum status = gl.CheckNamedFramebufferStatus(_framebufferHandle, FramebufferTarget.DrawFramebuffer);
+            GLEnum status = gl.CheckNamedFramebufferStatus(FramebufferHandle, FramebufferTarget.DrawFramebuffer);
             if (status != GLEnum.FramebufferComplete)
             {
                 throw new System.Exception($"Invalid framebuffer for pass : {this}");

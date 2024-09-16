@@ -10,6 +10,7 @@ using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -17,8 +18,8 @@ namespace GLSample
 {
     class Application
     {
-        private const int kDefaultWidth = 800;
-        private const int kDefaultHeight = 600;
+        private const int kDefaultWidth = 1280;
+        private const int kDefaultHeight = 720;
 
         private static void Main(string[] args)
         {
@@ -29,24 +30,21 @@ namespace GLSample
         // Context Objects
         private IWindow _window;
         private Camera _camera;
-        private GL _gl;
         private IInputContext _inputContext;
+        private GL _gl;
         private ImGuiController _imGuiController;
+        private Renderer _renderer;
 
-        private Transform _sphereTransform;
-        private GLMesh[] _sphereMeshes;
-        private GLShader _shader;
+        private GraphicObject[] _sphereObjects;
         private GLTexture _sphereBaseColorTexture;
-        private GLPerFrameUniformBuffer _perFrameUniformBuffer;
         private Vector3 _sphereColor = Vector3.One;
-
-        private TestRenderPass _testRenderPass;
 
         public void Start()
         {
             var options = WindowOptions.Default;
             options.Size = new Vector2D<int>(kDefaultWidth, kDefaultHeight);
             options.Title = "OpenGL with Silk.NET";
+            options.WindowBorder = WindowBorder.Fixed;
 
             var flags = ContextFlags.ForwardCompatible;
 #if DEBUG
@@ -78,42 +76,47 @@ namespace GLSample
             _gl = _window.CreateOpenGL();
             _inputContext = _window.CreateInput();
             _imGuiController = new ImGuiController(_gl, _window, _inputContext);
+            _renderer = new Renderer(_gl, _imGuiController);
+            _renderer.Initialize(kDefaultWidth, kDefaultHeight);
 
             for (int i = 0; i < _inputContext.Keyboards.Count; i++)
             {
                 _inputContext.Keyboards[i].KeyDown += KeyDown;
             }
 
-#if DEBUG
-            SetupDebugCallback();
-#endif
-
             CreateScene();
-
-            _testRenderPass = new TestRenderPass(_gl);
-            _testRenderPass.Initialize();
         }
 
         private void CreateScene()
         {
-            _perFrameUniformBuffer = new GLPerFrameUniformBuffer(_gl);
-
             _camera = new Camera();
             _camera.AspectRatio = (float)kDefaultWidth / kDefaultHeight;
             _camera.Transform.Position = new Vector3(0, 0, 10);
             _camera.Transform.EulerAngles = new Vector3(0, 0, 0);
 
             // All spheres share the same transform.
-            _sphereTransform = new Transform();
-            _sphereTransform.EulerAngles = new Vector3(-90.0f, 0.0f, 0.0f);
-            _sphereTransform.Scale = new Vector3(0.4f, 0.4f, 0.4f);
+            var sphereTransform = new Transform();
+            sphereTransform.EulerAngles = new Vector3(-90.0f, 0.0f, 0.0f);
+            sphereTransform.Scale = new Vector3(0.4f, 0.4f, 0.4f);
 
             _sphereBaseColorTexture = TextureLoader.LoadRGBA8Texture2DFromFile(_gl, "Assets/Textures/Spheres_BaseColor.png");
 
             var vertexSource = ShaderPreProcessor.ProcessShaderSource(File.ReadAllText("Assets/Shaders/Sphere.vertex.glsl"));
             var fragmentSource = ShaderPreProcessor.ProcessShaderSource(File.ReadAllText("Assets/Shaders/Sphere.fragment.glsl"));
-            _shader = new GLShader(_gl, vertexSource, fragmentSource);
-            _sphereMeshes = AssimpLoader.LoadMeshes(_gl, "Assets/MetalRoughSpheres.gltf");
+            var sphereShader = new GLShader(_gl, vertexSource, fragmentSource);
+            var sphereMeshes = AssimpLoader.LoadMeshes(_gl, "Assets/MetalRoughSpheres.gltf");
+
+            _sphereObjects = sphereMeshes.Select(mesh => new GraphicObject
+            {
+                IsTransparent = false,
+                CastShadows = false,
+                QueueOrder = 0,
+                Mesh = mesh,
+                Shader = sphereShader,
+                Transform = sphereTransform
+            }).ToArray();
+
+            _renderer.SceneObjects.AddRange(_sphereObjects);
         }
 
         private void OnUpdate(double deltaTime) { }
@@ -123,57 +126,23 @@ namespace GLSample
             _imGuiController.Update((float) deltaTime);
 
             // ImGui Example : change sphere color.
+            // All sphere share the same shader.
             ImGui.ColorEdit3("Color", ref _sphereColor);
+            _sphereObjects[0].Shader.SetVector("_Color", new Vector4(_sphereColor, 1.0f));
+            _sphereObjects[0].Shader.SetTexture("_BaseColor", _sphereBaseColorTexture, 0);
 
-            unsafe
-            {
-                SetupPerFrameConstants();
-
-                _gl.Viewport(0, 0, kDefaultWidth, kDefaultHeight);
-                _gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
-                _gl.ClearColor(0, 0, 0, 0);
-                _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-                // Setup Depth State
-                _gl.DepthMask(true);
-                _gl.DepthFunc(DepthFunction.Lequal);
-                _gl.Enable(EnableCap.DepthTest);
-
-                _shader.Use();
-                _shader.SetVector("_Color", new Vector4(_sphereColor, 1.0f));
-                _shader.SetTexture("_BaseColor", _sphereBaseColorTexture, 0);
-                _shader.SetMatrix("_LocalToWorld", _sphereTransform.LocalToWorldMatrix);
-
-                foreach (var mesh in _sphereMeshes)
-                {
-                    mesh.Draw();
-                }
-
-                _imGuiController.Render();
-
-                _testRenderPass.ExecutePass();
-            }
-        }
-
-        private void SetupPerFrameConstants()
-        {
-            Matrix4x4.Invert(_camera.Transform.LocalToWorldMatrix, out var viewMatrix);
-            var projectionMatrix = _camera.ProjectionMatrix;
-
-            var perFrameConstants = new GLPerFrameUniformBuffer.Constants()
-            {
-                viewProjectionMatrix = viewMatrix * projectionMatrix,
-                lightDirection = Vector3.Normalize(new Vector3(1, 1, 1))
-            };
-
-            _perFrameUniformBuffer.UpdateConstants(perFrameConstants);
+            _renderer.RenderScene(_camera);
         }
 
         private void OnClose()
         {
             _sphereBaseColorTexture.Dispose();
-            foreach (var mesh in _sphereMeshes) { mesh.Dispose(); }
-            _perFrameUniformBuffer.Dispose();
+            _sphereObjects[0].Shader.Dispose();
+            foreach (var sphereObject in _sphereObjects) 
+            {
+                sphereObject.Mesh.Dispose();
+            }
+            _renderer.Dispose();
             _imGuiController.Dispose();
             _inputContext.Dispose();
             _gl.Dispose();
@@ -186,24 +155,5 @@ namespace GLSample
                 _window.Close();
             }
         }
-
-#if DEBUG
-        private void SetupDebugCallback()
-        {
-            unsafe
-            {
-                DebugProc callback = (source, type, id, severity, length, message, userParam) =>
-                {
-                    if ((int) severity == (int) DebugSeverity.DebugSeverityNotification)
-                        return;
-
-                    var messageStr = Marshal.PtrToStringAnsi(message, length);
-                    Console.WriteLine($"{source}:{type}[{severity}]({id}) {messageStr}");
-                };
-                _gl.DebugMessageCallback(callback, null);
-                _gl.DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
-            }
-        }
-#endif
     }
 }

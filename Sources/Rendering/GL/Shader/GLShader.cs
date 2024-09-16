@@ -43,7 +43,7 @@ namespace GLSample.Rendering
             var location = Metadata.GetUniformLocation(id);
             if (location != -1)
             {
-                _gl.Uniform1(location, value);
+                _gl.ProgramUniform1(ProgramHandle, location, value);
             }
         }
 
@@ -52,7 +52,7 @@ namespace GLSample.Rendering
             var location = Metadata.GetUniformLocation(id);
             if (location != -1)
             {
-                _gl.Uniform4(location, value);
+                _gl.ProgramUniform4(ProgramHandle, location, value);
             }
         }
 
@@ -63,7 +63,7 @@ namespace GLSample.Rendering
             {
                 unsafe
                 {
-                    _gl.UniformMatrix4(location, 1, false, (float*) &value);
+                    _gl.ProgramUniformMatrix4(ProgramHandle, location, 1, false, (float*) &value);
                 }
             }
         }
@@ -77,7 +77,7 @@ namespace GLSample.Rendering
             if (location != -1)
             {
                 _gl.BindTextureUnit((uint)unit, value.Handle);
-                _gl.Uniform1(location, unit);
+                _gl.ProgramUniform1(ProgramHandle, location, unit);
             }
         }
 
