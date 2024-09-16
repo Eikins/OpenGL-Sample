@@ -1,16 +1,19 @@
 ﻿using Silk.NET.OpenGL;
+using Silk.NET.OpenGL.Extensions.ImGui;
 using System.Collections.Generic;
 using System.Numerics;
 
 namespace GLSample.Rendering
 {
-    public class DrawOpaquePass : GLRenderPass
+    public class ImGuiPass : GLRenderPass
     {
         private Renderer _renderer;
+        private ImGuiController _imGuiController;
 
-        public DrawOpaquePass(Renderer renderer) : base(renderer.GL) 
+        public ImGuiPass(Renderer renderer, ImGuiController imGuiController) : base(renderer.GL) 
         {
             _renderer = renderer;
+            _imGuiController = imGuiController;
         }
 
         public override void ConfigureTargets()
@@ -23,28 +26,15 @@ namespace GLSample.Rendering
                 }
             };
 
-            depthAttachment = new DepthAttachment()
-            {
-                target = _renderer.CameraDepthBuffer
-            };
+            // We don't need depth buffer
+            depthAttachment = null;
         }
 
         public override void Render()
         {
             var cameraColorBuffer = _renderer.CameraColorBuffer;
             gl.Viewport(0, 0, cameraColorBuffer.Descriptor.width, cameraColorBuffer.Descriptor.height);
-
-            // Clear Depth and Color
-            var clearValue = new Vector4(0, 0, 0, 0);
-            gl.ClearColor(clearValue.X, clearValue.Y, clearValue.Z, clearValue.W);
-            gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            // Setup Depth State
-            gl.DepthMask(true);
-            gl.DepthFunc(DepthFunction.Lequal);
-            gl.Enable(EnableCap.DepthTest);
-
-            _renderer.OpaqueList.Draw(new DrawingSettings());
+            _imGuiController.Render();
         }
     }
 }

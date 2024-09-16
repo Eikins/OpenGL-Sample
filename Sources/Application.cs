@@ -76,8 +76,8 @@ namespace GLSample
             _gl = _window.CreateOpenGL();
             _inputContext = _window.CreateInput();
             _imGuiController = new ImGuiController(_gl, _window, _inputContext);
-            _renderer = new Renderer(_gl, _imGuiController);
-            _renderer.Initialize(kDefaultWidth, kDefaultHeight);
+            _renderer = new Renderer(_gl);
+            _renderer.Initialize(kDefaultWidth, kDefaultHeight, _imGuiController);
 
             for (int i = 0; i < _inputContext.Keyboards.Count; i++)
             {

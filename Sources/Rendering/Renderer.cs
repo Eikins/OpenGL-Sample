@@ -19,7 +19,6 @@ namespace GLSample.Rendering
         public GL GL => _gl;
 
         private GL _gl;
-        private ImGuiController _imGuiController;
         private GLPerFrameUniformBuffer _perFrameUniformBuffer;
 
         public GLTexture CameraColorBuffer { get; private set; }
@@ -27,16 +26,15 @@ namespace GLSample.Rendering
 
         private DrawOpaquePass _drawOpaquePass;
         private MysteryPass _mysteryPass;
-
+        private ImGuiPass _imGuiPass;
         private uint _screenWidth, _screenHeight;
 
-        public Renderer(GL gl, ImGuiController imGuiController) 
+        public Renderer(GL gl) 
         {
             _gl = gl;
-            _imGuiController = imGuiController;
         }
 
-        public void Initialize(uint width, uint height)
+        public void Initialize(uint width, uint height, ImGuiController imGuiController = null)
         {
             _screenWidth = width;
             _screenHeight = height;
@@ -52,8 +50,10 @@ namespace GLSample.Rendering
 
             _drawOpaquePass = new DrawOpaquePass(this);
             _mysteryPass = new MysteryPass(GL);
+            _imGuiPass = new ImGuiPass(this, imGuiController);
 
             _drawOpaquePass.Initialize();
+            _imGuiPass.Initialize();
             _mysteryPass.Initialize();
         }
 
@@ -67,12 +67,9 @@ namespace GLSample.Rendering
             UpdateDrawLists();
             SetupPerFrameConstants(camera);
 
-            _gl.Viewport(0, 0, _screenWidth, _screenHeight);
-
             _drawOpaquePass.ExecutePass();
+            _imGuiPass.ExecutePass();
             _mysteryPass.ExecutePass();
-
-            _imGuiController.Render();
 
             // Finally, present to the screen.
             _gl.BlitNamedFramebuffer(_drawOpaquePass.FramebufferHandle, 0, 

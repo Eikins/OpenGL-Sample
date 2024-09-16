@@ -5,13 +5,13 @@ using System.Numerics;
 
 namespace GLSample.Rendering
 {
-    public class TestRenderPass : GLRenderPass
+    public class MysteryPass : GLRenderPass
     {
         private GLTexture _colorBuffer;
         private GLMesh _mesh;
         private GLShader _shader;
         
-        public TestRenderPass(GL gl) : base(gl) {}
+        public MysteryPass(GL gl) : base(gl) {}
 
         public override void ConfigureTargets()
         {
