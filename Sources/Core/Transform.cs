@@ -9,6 +9,10 @@ namespace GLSample.Core
         public Quaternion Rotation { get; set; } = Quaternion.Identity;
         public Vector3 Scale { get; set; } = Vector3.One;
 
+        public Vector3 Right => Vector3.Transform(Vector3.UnitX, Rotation);
+        public Vector3 Up => Vector3.Transform(Vector3.UnitY, Rotation);
+        public Vector3 Forward => Vector3.Transform(Vector3.UnitZ, Rotation);
+
         public Vector3 EulerAngles
         {
             set

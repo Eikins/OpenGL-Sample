@@ -29,14 +29,15 @@ namespace GLSample
         // Context Objects
         private IWindow _window;
         private Camera _camera;
+        private CameraController _cameraController;
         private GL _gl;
         private IInputContext _inputContext;
         private ImGuiController _imGuiController;
 
-        private Transform _sphereTransform;
-        private GLMesh[] _sphereMeshes;
+        private Transform _penguinTransform;
+        private GLMesh[] _penguinMeshes;
         private GLShader _shader;
-        private GLTexture _sphereBaseColorTexture;
+        private GLTexture _penguinBaseColor;
         private GLPerFrameUniformBuffer _perFrameUniformBuffer;
         private Vector3 _sphereColor = Vector3.One;
 
@@ -77,9 +78,16 @@ namespace GLSample
             _inputContext = _window.CreateInput();
             _imGuiController = new ImGuiController(_gl, _window, _inputContext);
 
-            for (int i = 0; i < _inputContext.Keyboards.Count; i++)
+            foreach (var keyboard in _inputContext.Keyboards)
             {
-                _inputContext.Keyboards[i].KeyDown += KeyDown;
+                keyboard.KeyDown += KeyDown;
+                keyboard.KeyDown += (keyboard, key, state) => _cameraController.OnKeyDown(key);
+                keyboard.KeyUp += (keyboard, key, state) => _cameraController.OnKeyUp(key);
+            }
+
+            foreach (var mice in _inputContext.Mice)
+            {
+                mice.MouseMove += (mouse, delta) => _cameraController.OnMouseMove(delta);
             }
 
 #if DEBUG
@@ -95,23 +103,29 @@ namespace GLSample
 
             _camera = new Camera();
             _camera.AspectRatio = (float)kDefaultWidth / kDefaultHeight;
-            _camera.Transform.Position = new Vector3(0, 0, 10);
+            _camera.Transform.Position = new Vector3(0, 0, 1);
             _camera.Transform.EulerAngles = new Vector3(0, 0, 0);
 
+            _cameraController = new CameraController(_camera);
+
             // All spheres share the same transform.
-            _sphereTransform = new Transform();
-            _sphereTransform.EulerAngles = new Vector3(-90.0f, 0.0f, 0.0f);
-            _sphereTransform.Scale = new Vector3(0.4f, 0.4f, 0.4f);
+            _penguinTransform = new Transform();
+            _penguinTransform.EulerAngles = new Vector3(-90.0f, 0.0f, 0.0f);
+            _penguinTransform.Scale = new Vector3(0.4f, 0.4f, 0.4f);
 
-            _sphereBaseColorTexture = TextureLoader.LoadRGBA8Texture2DFromFile(_gl, "Assets/Textures/Spheres_BaseColor.png");
-
+            _penguinBaseColor = TextureLoader.LoadRGBA8Texture2DFromFile(_gl, "Assets/Textures/test.png");
+            _penguinBaseColor.SetFilterMode(FilterMode.Linear);
             var vertexSource = ShaderPreProcessor.ProcessShaderSource(File.ReadAllText("Assets/Shaders/Sphere.vertex.glsl"));
             var fragmentSource = ShaderPreProcessor.ProcessShaderSource(File.ReadAllText("Assets/Shaders/Sphere.fragment.glsl"));
             _shader = new GLShader(_gl, vertexSource, fragmentSource);
-            _sphereMeshes = AssimpLoader.LoadMeshes(_gl, "Assets/MetalRoughSpheres.gltf");
+            _penguinMeshes = AssimpLoader.LoadMeshes(_gl, "Assets/Models/Penguin.obj");
+            _penguinTransform.Rotation = Quaternion.CreateFromYawPitchRoll(90, 0, 0);
         }
 
-        private void OnUpdate(double deltaTime) { }
+        private void OnUpdate(double deltaTime) 
+        {
+            _cameraController.Update((float) deltaTime);
+        }
 
         private void OnRender(double deltaTime)
         {
@@ -133,10 +147,10 @@ namespace GLSample
 
                 _shader.Use();
                 _shader.SetVector("_Color", new Vector4(_sphereColor, 1.0f));
-                _shader.SetTexture("_BaseColor", _sphereBaseColorTexture, 0);
-                _shader.SetMatrix("_LocalToWorld", _sphereTransform.LocalToWorldMatrix);
+                _shader.SetTexture("_BaseColor", _penguinBaseColor, 0);
+                _shader.SetMatrix("_LocalToWorld", _penguinTransform.LocalToWorldMatrix);
 
-                foreach (var mesh in _sphereMeshes)
+                foreach (var mesh in _penguinMeshes)
                 {
                     mesh.Draw();
                 }
@@ -161,8 +175,8 @@ namespace GLSample
 
         private void OnClose()
         {
-            _sphereBaseColorTexture.Dispose();
-            foreach (var mesh in _sphereMeshes) { mesh.Dispose(); }
+            _penguinBaseColor.Dispose();
+            foreach (var mesh in _penguinMeshes) { mesh.Dispose(); }
             _perFrameUniformBuffer.Dispose();
             _imGuiController.Dispose();
             _inputContext.Dispose();
