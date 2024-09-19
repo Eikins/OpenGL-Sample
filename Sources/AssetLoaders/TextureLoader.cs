@@ -11,17 +11,28 @@ namespace GLSample.AssetLoaders
     {
         public static GLTexture LoadRGBA8Texture2DFromFile(GL gl, string path, bool useMips = true)
         {
-            Image<Rgba32> image = (Image<Rgba32>) Image.Load(path);
+            return LoadTexture2DFromFile<Rgba32>(gl, path, useMips);
+        }
+
+        public static GLTexture LoadRGB8Texture2DFromFile(GL gl, string path, bool useMips = true)
+        {
+            return LoadTexture2DFromFile<Rgb24>(gl, path, useMips);
+        }
+
+        public static GLTexture LoadTexture2DFromFile<TPixel>(GL gl, string path, bool useMips = true)
+            where TPixel : unmanaged, IPixel<TPixel>
+        {
+            Image<TPixel> image = Image.Load<TPixel>(path);
             image.Mutate(ctx => ctx.Flip(FlipMode.Vertical));
 
-            var pixels = new Rgba32[image.Size.Width * image.Size.Height];
+            var pixels = new TPixel[image.Size.Width * image.Size.Height];
             image.CopyPixelDataTo(pixels);
 
             uint mipCount = 1;
             if (useMips)
             {
                 // Compute the maximum number of mipmaps.
-                mipCount = (uint) MathF.Floor(MathF.Log2(Math.Max(image.Size.Width, image.Size.Height))) + 1;
+                mipCount = (uint)MathF.Floor(MathF.Log2(Math.Max(image.Size.Width, image.Size.Height))) + 1;
             }
 
             var textureDescriptor = new GLTextureDescriptor((uint)image.Size.Width, (uint)image.Size.Height, SizedInternalFormat.Rgba8, mipCount);
@@ -29,7 +40,7 @@ namespace GLSample.AssetLoaders
             texture.SetFilterMode(FilterMode.Linear);
             texture.SetWrapMode(WrapMode.Clamp);
 
-            texture.SetData<Rgba32>(pixels, PixelFormat.Rgba, PixelType.UnsignedByte);
+            texture.SetData<TPixel>(pixels, PixelFormat.Rgba, PixelType.UnsignedByte);
             if (useMips && textureDescriptor.mipCount > 1)
             {
                 texture.GenerateAllMips();
