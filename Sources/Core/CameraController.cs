@@ -16,9 +16,14 @@ namespace GLSample.Core
         private bool _forwardPressed;
         private bool _backwardPressed;
 
+        private Vector2? _lastMousePosition;
+        private Vector2 _eulerAngles;
+        private bool _canRotate;
+
         public CameraController(Camera target)
         {
-            Target = target; 
+            Target = target;
+            _lastMousePosition = null;
         }
 
         public void OnKeyDown(Key key)
@@ -31,6 +36,7 @@ namespace GLSample.Core
                 case Key.ShiftLeft: _downPressed = true; break;
                 case Key.W: _forwardPressed = true; break;
                 case Key.S: _backwardPressed = true; break;
+                case Key.R: _canRotate = !_canRotate; break;
             }
         }
 
@@ -47,9 +53,6 @@ namespace GLSample.Core
             }
         }
 
-
-
-
         public void Update(float deltaTime)
         {
             var movement = Vector3.Zero;
@@ -64,9 +67,24 @@ namespace GLSample.Core
             Target.Transform.Position += movement * MovementSpeed * deltaTime;
         }
 
-        public void OnMouseMove(Vector2 delta)
+        public void Reset()
         {
-            // TODO
+            _lastMousePosition = null;
+        }
+
+        public void OnMouseMove(Vector2 mousePosition)
+        {
+            if (_lastMousePosition != null && _canRotate)
+            {
+
+                var delta = mousePosition - _lastMousePosition.Value;
+                _eulerAngles += delta * 0.1f;
+                _eulerAngles.X = Math.Clamp(_eulerAngles.X, -85f, 85f);
+
+                Target.Transform.EulerAngles = new Vector3(-_eulerAngles.Y, -_eulerAngles.X, 0);
+            }
+
+            _lastMousePosition = mousePosition;
         }
     }
 }
