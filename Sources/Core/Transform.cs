@@ -23,8 +23,8 @@ namespace GLSample.Core
         }
 
         public Matrix4x4 LocalToWorldMatrix => 
-                        Matrix4x4.CreateTranslation(Position) *
+                        Matrix4x4.CreateScale(Scale) *
                         Matrix4x4.CreateFromQuaternion(Rotation) *
-                        Matrix4x4.CreateScale(Scale);
+                        Matrix4x4.CreateTranslation(Position);
     }
 }
