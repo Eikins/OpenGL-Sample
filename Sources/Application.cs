@@ -1,18 +1,15 @@
 ﻿using GLSample.AssetLoaders;
 using GLSample.Core;
 using GLSample.Rendering;
-using GLSample.Sources.Rendering;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
-using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace GLSample
 {
@@ -30,6 +27,7 @@ namespace GLSample
         // Context Objects
         private IWindow _window;
         private Camera _camera;
+        private CameraController _cameraController;
         private IInputContext _inputContext;
         private GL _gl;
         private ImGuiController _imGuiController;
@@ -79,9 +77,16 @@ namespace GLSample
             _renderer = new Renderer(_gl);
             _renderer.Initialize(kDefaultWidth, kDefaultHeight, _imGuiController);
 
-            for (int i = 0; i < _inputContext.Keyboards.Count; i++)
+            foreach (var keyboard in _inputContext.Keyboards)
             {
-                _inputContext.Keyboards[i].KeyDown += KeyDown;
+                keyboard.KeyDown += KeyDown;
+                keyboard.KeyDown += (keyboard, key, state) => _cameraController.OnKeyDown(key);
+                keyboard.KeyUp += (keyboard, key, state) => _cameraController.OnKeyUp(key);
+            }
+
+            foreach (var mice in _inputContext.Mice)
+            {
+                mice.MouseMove += (mouse, delta) => _cameraController.OnMouseMove(delta);
             }
 
             CreateScene();
@@ -91,8 +96,10 @@ namespace GLSample
         {
             _camera = new Camera();
             _camera.AspectRatio = (float)kDefaultWidth / kDefaultHeight;
-            _camera.Transform.Position = new Vector3(0, 0, 10);
+            _camera.Transform.Position = new Vector3(0, 0, 1);
             _camera.Transform.EulerAngles = new Vector3(0, 0, 0);
+
+            _cameraController = new CameraController(_camera);
 
             // All spheres share the same transform.
             var sphereTransform = new Transform();
@@ -119,7 +126,10 @@ namespace GLSample
             _renderer.SceneObjects.AddRange(_sphereObjects);
         }
 
-        private void OnUpdate(double deltaTime) { }
+        private void OnUpdate(double deltaTime) 
+        {
+            _cameraController.Update((float) deltaTime);
+        }
 
         private void OnRender(double deltaTime)
         {

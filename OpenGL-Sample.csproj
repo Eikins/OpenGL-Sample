@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Models\Penguin.obj" />
     <None Remove="assets\shaders\library\Core.glsl" />
     <None Remove="Assets\Shaders\Library\SpaceTransforms.glsl" />
     <None Remove="Assets\Shaders\Triangle.fragment.glsl" />
