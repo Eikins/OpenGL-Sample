@@ -22,7 +22,7 @@ namespace GLSample.Rendering
             {
                 new ColorAttachment()
                 {
-                    target = _renderer.CameraColorBuffer,
+                    target = _renderer.PostProcessColorBuffer,
                 }
             };
 

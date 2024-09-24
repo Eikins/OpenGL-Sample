@@ -7,7 +7,7 @@ namespace GLSample.Core
     public class CameraController
     {
         public Camera Target { get; }
-        public float MovementSpeed { get; set; } = 1.0f;
+        public float MovementSpeed { get; set; } = 5.0f;
 
         private bool _rightPressed;
         private bool _leftPressed;
@@ -19,6 +19,7 @@ namespace GLSample.Core
         private Vector2? _lastMousePosition;
         private Vector2 _eulerAngles;
         private bool _canRotate;
+        private bool _isMovingFast;
 
         public CameraController(Camera target)
         {
@@ -37,6 +38,7 @@ namespace GLSample.Core
                 case Key.W: _forwardPressed = true; break;
                 case Key.S: _backwardPressed = true; break;
                 case Key.R: _canRotate = !_canRotate; break;
+                case Key.ControlLeft: _isMovingFast = true; break;
             }
         }
 
@@ -50,6 +52,7 @@ namespace GLSample.Core
                 case Key.ShiftLeft: _downPressed = false; break; 
                 case Key.W: _forwardPressed = false; break;
                 case Key.S: _backwardPressed = false; break;
+                case Key.ControlLeft: _isMovingFast = false; break;
             }
         }
 
@@ -64,6 +67,12 @@ namespace GLSample.Core
             if (_backwardPressed) movement += Vector3.UnitZ;
 
             movement = Vector3.Transform(movement, Target.Transform.Rotation);
+
+            if (_isMovingFast)
+            {
+                movement *= 5;
+            }
+
             Target.Transform.Position += movement * MovementSpeed * deltaTime;
         }
 
@@ -76,10 +85,9 @@ namespace GLSample.Core
         {
             if (_lastMousePosition != null && _canRotate)
             {
-
                 var delta = mousePosition - _lastMousePosition.Value;
                 _eulerAngles += delta * 0.1f;
-                _eulerAngles.X = Math.Clamp(_eulerAngles.X, -85f, 85f);
+                _eulerAngles.Y = Math.Clamp(_eulerAngles.Y, -85f, 85f);
 
                 Target.Transform.EulerAngles = new Vector3(-_eulerAngles.Y, -_eulerAngles.X, 0);
             }

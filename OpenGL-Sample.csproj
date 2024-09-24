@@ -22,10 +22,15 @@
 
   <ItemGroup>
     <None Remove="Assets\Models\Penguin.obj" />
+    <None Remove="Assets\Models\seal.obj" />
+    <None Remove="Assets\Models\seal_albedo.jpg" />
     <None Remove="assets\shaders\library\Core.glsl" />
     <None Remove="Assets\Shaders\Library\SpaceTransforms.glsl" />
-    <None Remove="Assets\Shaders\Triangle.fragment.glsl" />
-    <None Remove="Assets\Shaders\Triangle.vertex.glsl" />
+    <None Remove="Assets\Shaders\PostProcess.fragment.glsl" />
+    <None Remove="Assets\Shaders\PostProcess.vertex.glsl" />
+    <None Remove="Assets\Shaders\StandardInstanced.vertex.glsl" />
+    <None Remove="Assets\Shaders\Terrain.fragment.glsl" />
+    <None Remove="Assets\Shaders\Terrain.vertex.glsl" />
   </ItemGroup>
   
 </Project>

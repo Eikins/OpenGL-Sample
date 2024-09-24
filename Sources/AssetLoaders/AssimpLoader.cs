@@ -10,9 +10,14 @@ namespace GLSample.AssetLoaders
     {
         private static readonly Assimp kAssimp = Assimp.GetApi();
 
-        public static GLMesh[] LoadMeshes(GL gl, string path)
+        public static GLMesh[] LoadMeshes(GL gl, string path, bool recalculateNormals = false)
         {
             var flags = PostProcessSteps.Triangulate;
+            if (recalculateNormals)
+            {
+                flags |= PostProcessSteps.GenerateSmoothNormals;
+            }
+
             unsafe
             {
                 var scene = kAssimp.ImportFile(path, (uint)flags);

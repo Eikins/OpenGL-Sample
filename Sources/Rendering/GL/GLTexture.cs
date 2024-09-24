@@ -106,7 +106,7 @@ namespace GLSample.Rendering
                     _gl.TextureParameterI(Handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
                     break;
                 case FilterMode.Linear:
-                    _gl.TextureParameterI(Handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                    _gl.TextureParameterI(Handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
                     _gl.TextureParameterI(Handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
                     break;
             }

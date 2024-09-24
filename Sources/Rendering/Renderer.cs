@@ -1,9 +1,12 @@
-﻿using GLSample.Core;
+﻿using GLSample.AssetLoaders;
+using GLSample.Core;
+using GLSample.Sources.Core;
 using GLSample.Sources.Rendering;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -23,9 +26,10 @@ namespace GLSample.Rendering
 
         public GLTexture CameraColorBuffer { get; private set; }
         public GLTexture CameraDepthBuffer { get; private set; }
+        public GLTexture PostProcessColorBuffer { get; private set; }
 
         private DrawOpaquePass _drawOpaquePass;
-        private MysteryPass _mysteryPass;
+        private PostProcessPass _postProcessPass;
         private ImGuiPass _imGuiPass;
         private uint _screenWidth, _screenHeight;
 
@@ -34,7 +38,7 @@ namespace GLSample.Rendering
             _gl = gl;
         }
 
-        public void Initialize(uint width, uint height, ImGuiController imGuiController = null)
+        public void Initialize(uint width, uint height, ImGuiController imGuiController = null, PostProcessing postProcessing = null)
         {
             _screenWidth = width;
             _screenHeight = height;
@@ -45,16 +49,23 @@ namespace GLSample.Rendering
 
             _perFrameUniformBuffer = new GLPerFrameUniformBuffer(_gl);
 
-            CameraColorBuffer = new GLTexture(_gl, new GLTextureDescriptor(width, height, SizedInternalFormat.Rgba8));
+            CameraColorBuffer = new GLTexture(_gl, new GLTextureDescriptor(width, height, SizedInternalFormat.Rgb8));
             CameraDepthBuffer = new GLTexture(_gl, new GLTextureDescriptor(width, height, SizedInternalFormat.DepthComponent24));
+            PostProcessColorBuffer = new GLTexture(_gl, new GLTextureDescriptor(width, height, SizedInternalFormat.Rgb8));
+
+            CameraColorBuffer.SetWrapMode(WrapMode.Clamp);
+
+            var postProcessShader = new GLShader(_gl,
+                ShaderPreProcessor.ProcessShaderSource(File.ReadAllText("Assets/Shaders/PostProcess.vertex.glsl")),
+                ShaderPreProcessor.ProcessShaderSource(File.ReadAllText("Assets/Shaders/PostProcess.fragment.glsl")));
 
             _drawOpaquePass = new DrawOpaquePass(this);
-            _mysteryPass = new MysteryPass(GL);
+            _postProcessPass = new PostProcessPass(_gl, CameraColorBuffer, PostProcessColorBuffer, postProcessShader, postProcessing);
             _imGuiPass = new ImGuiPass(this, imGuiController);
 
             _drawOpaquePass.Initialize();
             _imGuiPass.Initialize();
-            _mysteryPass.Initialize();
+            _postProcessPass.Initialize();
         }
 
         public void Dispose()
@@ -68,11 +79,11 @@ namespace GLSample.Rendering
             SetupPerFrameConstants(camera);
 
             _drawOpaquePass.ExecutePass();
+            _postProcessPass.ExecutePass();
             _imGuiPass.ExecutePass();
-            _mysteryPass.ExecutePass();
 
             // Finally, present to the screen.
-            _gl.BlitNamedFramebuffer(_drawOpaquePass.FramebufferHandle, 0, 
+            _gl.BlitNamedFramebuffer(_postProcessPass.FramebufferHandle, 0, 
                 0, 0, (int) _screenWidth, (int) _screenHeight, 
                 0, 0, (int) _screenWidth, (int) _screenHeight, 
                 ClearBufferMask.ColorBufferBit,
@@ -87,7 +98,8 @@ namespace GLSample.Rendering
             var perFrameConstants = new GLPerFrameUniformBuffer.Constants()
             {
                 viewProjectionMatrix = viewMatrix * projectionMatrix,
-                lightDirection = Vector3.Normalize(new Vector3(1, 1, 1))
+                lightDirection = Vector3.Normalize(new Vector3(1, 1, 1)),
+                time = Time.Value
             };
 
             _perFrameUniformBuffer.UpdateConstants(perFrameConstants);

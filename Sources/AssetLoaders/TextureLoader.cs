@@ -19,6 +19,35 @@ namespace GLSample.AssetLoaders
             return LoadTexture2DFromFile<Rgb24>(gl, path, useMips);
         }
 
+        public static GLTexture LoadHeightTexture(GL gl, string path, bool useMips = true)
+        {
+            var image = Image.Load<L8>(path);
+            image.Mutate(ctx => ctx.Flip(FlipMode.Vertical));
+
+            var pixels = new L8[image.Width * image.Height];
+            image.CopyPixelDataTo(pixels);
+
+            uint mipCount = 1;
+            if (useMips)
+            {
+                // Compute the maximum number of mipmaps.
+                mipCount = (uint)MathF.Floor(MathF.Log2(Math.Max(image.Width, image.Height))) + 1;
+            }
+
+            var textureDescriptor = new GLTextureDescriptor((uint)image.Width, (uint)image.Height, SizedInternalFormat.R8, mipCount);
+            var texture = new GLTexture(gl, textureDescriptor);
+            texture.SetFilterMode(FilterMode.Linear);
+            texture.SetWrapMode(WrapMode.Clamp);
+
+            texture.SetData<L8>(pixels, PixelFormat.Red, PixelType.UnsignedByte);
+            if (useMips && textureDescriptor.mipCount > 1)
+            {
+                texture.GenerateAllMips();
+            }
+
+            return texture;
+        }
+
         public static GLTexture LoadTexture2DFromFile<TPixel>(GL gl, string path, bool useMips = true)
             where TPixel : unmanaged, IPixel<TPixel>
         {

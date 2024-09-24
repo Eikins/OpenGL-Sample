@@ -17,6 +17,7 @@ namespace GLSample.Sources.Rendering
         {
             [FieldOffset(0)] public Matrix4x4 viewProjectionMatrix;
             [FieldOffset(64)] public Vector3 lightDirection;
+            [FieldOffset(76)] public float time;
 
             public static nuint kByteSize = (nuint) Marshal.SizeOf<Constants>();
         }
